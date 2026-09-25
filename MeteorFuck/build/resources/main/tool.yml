@@ -1,0 +1,18 @@
+# MeteorFuck 反作弊功能开关
+# 开关状态由指令维护：/meteorfuck tool <功能名> <true|false>
+# 手动修改后可用 /reload confirm 或调用 MeteorfuckMod#reloadToolConfig() 重新加载
+
+# 杀戮光环检测
+No_KillAura: true
+
+# 刀暴（暴击异常）检测
+No_Criticals: true
+
+# 反飞行（Fly / Glide / Hover）检测
+No_Fly: true
+
+# 反鞘翅飞行（ElytraFly：平飞 / 悬停 / 无推进爬升）检测
+No_ElytraFly: true
+
+# 反透视（X-Ray）检测
+No_XRay: true

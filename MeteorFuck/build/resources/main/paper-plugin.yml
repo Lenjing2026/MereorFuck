@@ -1,0 +1,13 @@
+main: com.lj.meteorfuck.MeteorfuckMod
+name: MeteorFuck
+version: 1.0.0
+authors: Lenjing_2026
+bootstrapper: com.lj.meteorfuck.MeteorfuckModBootstrap
+website: https://mcreator.net
+api-version: 26.1
+
+commands:
+  meteorfuck:
+    description: MeteorFuck 反作弊管理
+    usage: /meteorfuck tool <功能名> <true|false>
+    aliases: [ mf ]
