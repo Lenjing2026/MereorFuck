@@ -1,0 +1,104 @@
+plugins {
+	id "java"
+}
+
+base.archivesName = "plugin"
+
+def toolsDir = layout.projectDirectory.dir("build/tools")
+def runDir = layout.projectDirectory.dir("run")
+def pluginsDir = runDir.dir("plugins")
+def paperJar = runDir.file("paper.jar")
+
+repositories {
+	mavenCentral()
+	maven {
+		name = "papermc"
+		url = "https://repo.papermc.io/repository/maven-public/"
+	}
+}
+
+dependencies {
+	compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+}
+
+
+def javaVersion = JavaVersion.VERSION_25
+
+java {
+	sourceCompatibility = javaVersion
+	targetCompatibility = javaVersion
+	toolchain.languageVersion = JavaLanguageVersion.of(javaVersion.toString())
+}
+
+tasks.withType(JavaCompile).configureEach {
+	options.release = javaVersion.toString() as Integer
+}
+
+tasks.register('prepareDirs') {
+	group 'paper'
+	doLast {
+		toolsDir.asFile.mkdirs()
+		pluginsDir.asFile.mkdirs()
+	}
+}
+
+tasks.register('downloadPaper') {
+	group 'paper'
+	dependsOn 'prepareDirs'
+
+	doLast {
+		if (!paperJar.asFile.exists()) {
+			// The very long string of random characters need to be changed for each version/build. This is the download link on https://papermc.io/downloads/paper
+			new URL("https://fill-data.papermc.io/v1/objects/1d70b1dab9cf4a6de615209a536f3a45a2186240253c428213ce2188ab95e5f7/paper-26.1.2-74.jar").withInputStream { i ->
+				paperJar.asFile.withOutputStream { it << i }
+			}
+		}
+	}
+}
+
+tasks.register('buildPaper', Exec) {
+	group 'paper'
+	dependsOn tasks.downloadPaper
+
+	workingDir = runDir.asFile
+	commandLine = ["java", "-jar", paperJar.asFile.absolutePath, "--rev", "26.1.2"]
+	onlyIf { !paperJar.asFile.exists() }
+}
+
+tasks.register('copyPlugin', Copy) {
+	group 'paper'
+	dependsOn tasks.named('jar')
+
+	from layout.buildDirectory.file("libs/plugin.jar")
+	into layout.projectDirectory.dir("run/plugins")
+}
+
+tasks.register('runPaperServer', Exec) {
+	group 'paper'
+	dependsOn tasks.build
+	dependsOn tasks.copyPlugin
+
+	workingDir = file("run")
+	commandLine = ["java", "-jar", paperJar] as List<String>
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	withSourcesJar()
+	sourceCompatibility = javaVersion
+	targetCompatibility = javaVersion
+}
+
+processResources {
+	def props = [version: version]
+	inputs.properties props
+	filteringCharset 'UTF-8'
+	filesMatching('plugin.yml') {
+		expand props
+	}
+}
+
+apply from: 'mcreator.gradle'

@@ -1,0 +1,36 @@
+# MeteorFuck 反作弊功能开关
+# 开关状态由指令维护：/meteorfuck tool <功能名> <true|false>
+# 手动修改后可用 /reload confirm 或调用 MeteorfuckMod#reloadToolConfig() 重新加载
+
+# 杀戮光环检测
+No_KillAura: true
+
+# 刀暴（暴击异常）检测
+No_Criticals: true
+
+# 反飞行（Fly / Glide / Hover）检测
+No_Fly: true
+
+# 反鞘翅飞行（ElytraFly：平飞 / 悬停 / 无推进爬升）检测
+No_ElytraFly: true
+
+# 反透视（X-Ray）检测
+No_XRay: true
+
+# 反水晶光环（CrystalAura：自动放置并引爆末地水晶）检测
+No_CrystalAura: true
+
+# 反摔落免疫（NoFall：谎报落地、清空落距）检测
+No_NoFall: true
+
+# 反减速免疫（NoSlow：吃东西 / 拉弓时不减速）检测
+No_NoSlow: true
+
+# 反载具加速（EntitySpeed：骑乘船 / 马 / 猪等加速）检测
+No_EntitySpeed: true
+
+# 反击退修改（VelocityBoost：减少或增强被击退）检测
+No_VelocityBoost: true
+
+# 反副手崩溃（OffhandCrash：狂刷副手装备广播包）检测
+No_OffhandCrash: true
