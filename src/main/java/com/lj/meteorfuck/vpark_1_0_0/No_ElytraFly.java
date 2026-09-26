@@ -24,41 +24,38 @@ import com.lj.meteorfuck.MeteorfuckMod;
 /**
  * 反鞘翅飞行（ElytraFly / 平飞 / 悬停）检测器 —— 纯服务端实现。
  *
- * <p>本类<b>只提供函数</b>，不注册任何事件监听。由调度器调用
+ * 本类只提供函数，不注册任何事件监听。由调度器调用
  * {@link #onMove(Player, Location, Location, boolean)}（建议每次 PlayerMoveEvent 都调用）
- * 与 {@link #tick()}（建议每秒一次）即可。</p>
+ * 与 {@link #tick()}（建议每秒一次）即可。
  *
- * <h3>原版鞘翅的物理事实（判定基准）</h3>
- * <ul>
- *   <li>滑翔时只有重力与「沿视线方向」的速度重分配，<b>没有任何向上推力</b>；
- *       速度重分配只会让下降变缓，无法把垂直速度变成正值；</li>
- *   <li>因此原版滑翔<b>无法自行爬升</b>：想上升只能靠烟花火箭、三叉戟激流、
- *       漂浮药水、爆炸击退等外部推力；</li>
- *   <li>平视滑翔的稳定下降速度约 3 格 / 秒，<b>不可能长期保持高度或悬停</b>；</li>
- *   <li>高速飞行只能靠俯冲换速度，所以「不下降却很快」在原版不存在。</li>
- * </ul>
+ * 原版鞘翅的物理事实（判定基准）
  *
- * <h3>检测项</h3>
- * <ol>
- *   <li><b>无推进爬升</b> —— 滑翔中垂直位移持续为正，或单 tick 爬升幅度超出原版可能；</li>
- *   <li><b>无重力悬停</b> —— 每秒采样一次 Y 坐标，连续两次几乎不动
- *       （外挂悬停时客户端往往根本不发移动包，因此这一检查放在 {@link #tick()} 中）；</li>
- *   <li><b>平飞</b> —— 不下降却保持高速（原版必须先俯冲才能加速）；</li>
- *   <li><b>无鞘翅滑翔</b> —— 服务端认为玩家在滑翔，胸甲却不是鞘翅（伪造滑翔包）。</li>
- * </ol>
+ * - 滑翔时只有重力与「沿视线方向」的速度重分配，没有任何向上推力；
+ *   速度重分配只会让下降变缓，无法把垂直速度变成正值；
+ * - 因此原版滑翔无法自行爬升：想上升只能靠烟花火箭、三叉戟激流、
+ *   漂浮药水、爆炸击退等外部推力；
+ * - 平视滑翔的稳定下降速度约 3 格 / 秒，不可能长期保持高度或悬停；
+ * - 高速飞行只能靠俯冲换速度，所以「不下降却很快」在原版不存在。
  *
- * <h3>如何区分正常行为（重点）</h3>
- * <ul>
- *   <li>{@link Player#getAllowFlight()} / {@link Player#isFlying()}、创造与旁观模式、
- *       {@code meteorfuck.bypass}（OP 默认拥有）一律完全免检，插件给的飞行权限不会被误判；</li>
- *   <li>激流、水中、漂浮与缓降药水、受伤击退（{@code getNoDamageTicks()}）全部放行；</li>
- *   <li>附近存在烟花火箭实体时视为合法推进；该实体查询只在「即将判定」时才执行，
- *       不会给每个移动事件增加开销；</li>
- *   <li>爬升的同时水平速度在明显衰减时，视为「俯冲储能后拉起」这一原版合法操作，不判定；</li>
- *   <li>滑翔刚起步、加入 / 重生 / 传送之后、TPS 过低、延迟过高时都不检测；</li>
- *   <li>贴墙或卡在方块间的滑翔（Y 不变但被阻挡）会先做碰撞探测再决定是否判定；</li>
- *   <li>多信号<b>加权累计</b>（VL）后才踢出，单一信号绝不会误杀。</li>
- * </ul>
+ * 检测项
+ *
+ * 1. 无推进爬升 —— 滑翔中垂直位移持续为正，或单 tick 爬升幅度超出原版可能；
+ * 2. 无重力悬停 —— 每秒采样一次 Y 坐标，连续两次几乎不动
+ *    （外挂悬停时客户端往往根本不发移动包，因此这一检查放在 {@link #tick()} 中）；
+ * 3. 平飞 —— 不下降却保持高速（原版必须先俯冲才能加速）；
+ * 4. 无鞘翅滑翔 —— 服务端认为玩家在滑翔，胸甲却不是鞘翅（伪造滑翔包）。
+ *
+ * 如何区分正常行为（重点）
+ *
+ * - {@link Player#getAllowFlight()} / {@link Player#isFlying()}、创造与旁观模式、
+ *   {@code meteorfuck.bypass}（OP 默认拥有）一律完全免检，插件给的飞行权限不会被误判；
+ * - 激流、水中、漂浮与缓降药水、受伤击退（{@code getNoDamageTicks()}）全部放行；
+ * - 附近存在烟花火箭实体时视为合法推进；该实体查询只在「即将判定」时才执行，
+ *   不会给每个移动事件增加开销；
+ * - 爬升的同时水平速度在明显衰减时，视为「俯冲储能后拉起」这一原版合法操作，不判定；
+ * - 滑翔刚起步、加入 / 重生 / 传送之后、TPS 过低、延迟过高时都不检测；
+ * - 贴墙或卡在方块间的滑翔（Y 不变但被阻挡）会先做碰撞探测再决定是否判定；
+ * - 多信号加权累计（VL）后才踢出，单一信号绝不会误杀。
  */
 public final class No_ElytraFly {
 
@@ -193,8 +190,8 @@ public final class No_ElytraFly {
 	/**
 	 * 玩家移动时调用（对应 {@code PlayerMoveEvent}），爬升与平飞的主检测入口。
 	 *
-	 * <p>同一 tick 内的多次事件会先合并成一次完整位移再判定，因此结果与
-	 * 事件频率无关；纯转头包（位移为 0）不会打断持续爬升的计时。</p>
+	 * 同一 tick 内的多次事件会先合并成一次完整位移再判定，因此结果与
+	 * 事件频率无关；纯转头包（位移为 0）不会打断持续爬升的计时。
 	 *
 	 * @param player   玩家
 	 * @param from     移动前的位置
@@ -255,7 +252,7 @@ public final class No_ElytraFly {
 	/**
 	 * 定期调用（建议每秒一次）：刷新 TPS 缓存、检测悬停与「无鞘翅滑翔」、衰减违规等级。
 	 *
-	 * <p>悬停只在客户端不发移动包时才难以被发现，所以必须由本方法按时间采样。</p>
+	 * 悬停只在客户端不发移动包时才难以被发现，所以必须由本方法按时间采样。
 	 */
 	public void tick() {
 		double[] tps = Bukkit.getTPS();
@@ -409,8 +406,8 @@ public final class No_ElytraFly {
 	 * 判断玩家是否处于合法的「被推进」状态：最近确认过烟花火箭、刚被击退、
 	 * 或此刻附近确实有火箭实体。
 	 *
-	 * <p>附近实体查询是这里唯一较贵的操作，因此只在规则已经确认违规、
-	 * 即将处罚时才会执行（{@code boostUntil} 缓存进一步避免重复查询）。</p>
+	 * 附近实体查询是这里唯一较贵的操作，因此只在规则已经确认违规、
+	 * 即将处罚时才会执行（{@code boostUntil} 缓存进一步避免重复查询）。
 	 */
 	private static boolean propelled(Player player, PlayerData data, long now) {
 		if (now < data.boostUntil) {
@@ -446,8 +443,8 @@ public final class No_ElytraFly {
 	/**
 	 * 判断玩家是否完全免检。
 	 *
-	 * <p>这里是「区分插件给的飞行权限」的关键：只要 {@code allowFlight} 或 {@code isFlying}
-	 * 为 true（Essentials 等插件的 /fly、OP 开飞行、区域飞行），就一律放行。</p>
+	 * 这里是「区分插件给的飞行权限」的关键：只要 {@code allowFlight} 或 {@code isFlying}
+	 * 为 true（Essentials 等插件的 /fly、OP 开飞行、区域飞行），就一律放行。
 	 */
 	private static boolean isExempt(Player player) {
 		if (player.isDead() || player.isInsideVehicle()) {
@@ -467,7 +464,7 @@ public final class No_ElytraFly {
 	/**
 	 * 判断胸甲槽位是否为鞘翅。
 	 *
-	 * <p>Paper 的 {@code getChestplate()} 标注为非空，空槽位返回 AIR，因此无需判空。</p>
+	 * Paper 的 {@code getChestplate()} 标注为非空，空槽位返回 AIR，因此无需判空。
 	 */
 	private static boolean hasElytra(Player player) {
 		ItemStack chest = player.getInventory().getChestplate();
@@ -477,8 +474,8 @@ public final class No_ElytraFly {
 	/**
 	 * 判断玩家周围（含脚下一小段）是否存在实体碰撞方块。
 	 *
-	 * <p>用于排除「贴墙 / 卡在方块里导致 Y 不变」这种合法情况，
-	 * 只在规则即将判定时才会被调用。</p>
+	 * 用于排除「贴墙 / 卡在方块里导致 Y 不变」这种合法情况，
+	 * 只在规则即将判定时才会被调用。
 	 */
 	private static boolean isObstructed(Player player) {
 		BoundingBox box = player.getBoundingBox();

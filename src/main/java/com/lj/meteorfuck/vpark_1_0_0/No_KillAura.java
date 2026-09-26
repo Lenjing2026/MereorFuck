@@ -22,31 +22,29 @@ import com.lj.meteorfuck.MeteorfuckMod;
 /**
  * KillAura（杀戮光环）检测器 —— 纯服务端实现。
  *
- * <p>本类<b>只提供函数</b>，不注册任何事件监听。后续由监听器 / 调度器调用
+ * 本类只提供函数，不注册任何事件监听。后续由监听器 / 调度器调用
  * {@link #onAttack(Player, Entity, EntityDamageEvent.DamageCause)}、
- * {@link #onMove(Player, Location, Location)}、{@link #tick()} 等入口即可。</p>
+ * {@link #onMove(Player, Location, Location)}、{@link #tick()} 等入口即可。
  *
- * <h3>检测项</h3>
- * <ol>
- *   <li>非法俯仰角 / NaN 旋转 —— 正常客户端不可能产生，直接判定；</li>
- *   <li>攻击角度 —— 视线与「目标包围盒上离眼睛最近的点」的夹角超过阈值；</li>
- *   <li>多目标 —— 极短时间窗口内切换攻击多个不同实体；</li>
- *   <li>攻击间隔规律性 —— 间隔标准差过小（机械式连击）；</li>
- *   <li>自瞄 GCD —— 角度增量不存在真实鼠标应有的公约数（静默瞄准 / 瞬瞄）；</li>
- *   <li>攻击距离 —— 超过原版合法攻击距离；</li>
- *   <li>穿墙攻击 —— 视线被方块阻挡却仍然命中。</li>
- * </ol>
+ * 检测项
  *
- * <h3>如何避免误伤正常辅助模组</h3>
- * <ul>
- *   <li>多信号<b>加权累计</b>（VL）后才踢出，单一信号绝不会误杀；</li>
- *   <li>创造 / 旁观 / 濒死 / 骑乘 / 拥有 {@code meteorfuck.bypass} 权限的玩家完全免检；</li>
- *   <li>加入、重生、传送后给予免检期；服务器 TPS 过低时暂停几何类检测；</li>
- *   <li>视角判定使用「包围盒最近点」，避免抬头 / 低头 / 高低差造成的误差；</li>
- *   <li>攻击距离按玩家延迟补偿；</li>
- *   <li>视角 GCD 采用<b>滚动窗口</b>并在脱战后清空，避免一次异常采样永久污染结果；</li>
- *   <li>昂贵的射线追踪只在玩家已有可疑积累时才执行。</li>
- * </ul>
+ * 1. 非法俯仰角 / NaN 旋转 —— 正常客户端不可能产生，直接判定；
+ * 2. 攻击角度 —— 视线与「目标包围盒上离眼睛最近的点」的夹角超过阈值；
+ * 3. 多目标 —— 极短时间窗口内切换攻击多个不同实体；
+ * 4. 攻击间隔规律性 —— 间隔标准差过小（机械式连击）；
+ * 5. 自瞄 GCD —— 角度增量不存在真实鼠标应有的公约数（静默瞄准 / 瞬瞄）；
+ * 6. 攻击距离 —— 超过原版合法攻击距离；
+ * 7. 穿墙攻击 —— 视线被方块阻挡却仍然命中。
+ *
+ * 如何避免误伤正常辅助模组
+ *
+ * - 多信号加权累计（VL）后才踢出，单一信号绝不会误杀；
+ * - 创造 / 旁观 / 濒死 / 骑乘 / 拥有 {@code meteorfuck.bypass} 权限的玩家完全免检；
+ * - 加入、重生、传送后给予免检期；服务器 TPS 过低时暂停几何类检测；
+ * - 视角判定使用「包围盒最近点」，避免抬头 / 低头 / 高低差造成的误差；
+ * - 攻击距离按玩家延迟补偿；
+ * - 视角 GCD 采用滚动窗口并在脱战后清空，避免一次异常采样永久污染结果；
+ * - 昂贵的射线追踪只在玩家已有可疑积累时才执行。
  */
 public final class No_KillAura {
 
@@ -392,8 +390,8 @@ public final class No_KillAura {
 	/**
 	 * 攻击角度检测：视线方向与「目标包围盒最近点」方向的夹角是否超过阈值。
 	 *
-	 * <p>朝向向量按 {@code Location#getDirection()} 的公式直接由 yaw / pitch 计算，
-	 * 省去每次攻击额外创建 {@link Location} 与 {@link Vector} 的开销。</p>
+	 * 朝向向量按 {@code Location#getDirection()} 的公式直接由 yaw / pitch 计算，
+	 * 省去每次攻击额外创建 {@link Location} 与 {@link Vector} 的开销。
 	 */
 	private static boolean checkAttackAngle(PlayerData data, float yaw, float pitch,
 			double dx, double dy, double dz, double distance) {

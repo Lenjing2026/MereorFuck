@@ -44,8 +44,8 @@ import com.lj.meteorfuck.vpark_1_0_0.No_XRay;
 /**
  * 反外挂调度器：统一注册事件监听，并把事件分发给各检测模块。
  *
- * <p>{@code No_KillAura}、{@code No_Criticals} 都是纯函数文件，自身不注册任何监听；
- * 所有的事件注册与定时任务都集中在本类，便于统一启停。</p>
+ * {@code No_KillAura}、{@code No_Criticals} 都是纯函数文件，自身不注册任何监听；
+ * 所有的事件注册与定时任务都集中在本类，便于统一启停。
  */
 public final class MeteorfuckCheck implements Listener {
 
@@ -472,9 +472,9 @@ public final class MeteorfuckCheck implements Listener {
 	/**
 	 * 移动 / 转头分发。
 	 *
-	 * <p>注意：{@link PlayerTeleportEvent} 是 {@link PlayerMoveEvent} 的子类，
+	 * 注意：{@link PlayerTeleportEvent} 是 {@link PlayerMoveEvent} 的子类，
 	 * 因此传送时本方法也会被调用，此时 {@code from} 与 {@code to} 跨度极大；
-	 * 两个检测模块都内部处理了这种跳变，无需在此特判。</p>
+	 * 两个检测模块都内部处理了这种跳变，无需在此特判。
 	 */
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onMove(PlayerMoveEvent event) {
@@ -521,8 +521,8 @@ public final class MeteorfuckCheck implements Listener {
 	/**
 	 * 破坏方块分发（反透视统计用）。
 	 *
-	 * <p>用 MONITOR 优先级是为了在方块被真正移除前拿到它，
-	 * 这样「是否有暴露面」的判断才准确。</p>
+	 * 用 MONITOR 优先级是为了在方块被真正移除前拿到它，
+	 * 这样「是否有暴露面」的判断才准确。
 	 */
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onBlockBreak(BlockBreakEvent event) {
@@ -536,8 +536,8 @@ public final class MeteorfuckCheck implements Listener {
 	/**
 	 * 放置实体分发（反水晶光环统计用）。
 	 *
-	 * <p>只关心玩家放下的末地水晶：记录「谁在什么时候放的」，
-	 * 供之后的引爆事件计算「放置 → 引爆」间隔。</p>
+	 * 只关心玩家放下的末地水晶：记录「谁在什么时候放的」，
+	 * 供之后的引爆事件计算「放置 → 引爆」间隔。
 	 */
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onEntityPlace(EntityPlaceEvent event) {
@@ -554,7 +554,7 @@ public final class MeteorfuckCheck implements Listener {
 	/**
 	 * 载具移动分发（反载具加速检测用）。
 	 *
-	 * <p>只处理「乘客里有玩家」的载具：空船、野生动物等不参与统计。</p>
+	 * 只处理「乘客里有玩家」的载具：空船、野生动物等不参与统计。
 	 */
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onVehicleMove(VehicleMoveEvent event) {
@@ -572,8 +572,8 @@ public final class MeteorfuckCheck implements Listener {
 	/**
 	 * 受伤分发（反击退修改检测用）。
 	 *
-	 * <p>任何伤害都会改变位移、使正在进行的击退测量作废，因此这里直接监听最上层的
-	 * {@link EntityDamageEvent}；只有「玩家冲刺近战」才会开启一次新的测量。</p>
+	 * 任何伤害都会改变位移、使正在进行的击退测量作废，因此这里直接监听最上层的
+	 * {@link EntityDamageEvent}；只有「玩家冲刺近战」才会开启一次新的测量。
 	 */
 	@EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
 	public void onEntityDamage(EntityDamageEvent event) {
@@ -594,8 +594,8 @@ public final class MeteorfuckCheck implements Listener {
 	/**
 	 * 副手切换分发（反副手崩溃检测用）。
 	 *
-	 * <p>用 LOWEST 优先级是为了在任何处理之前就能取消：副手崩溃靠的是刷爆装备广播包,
-	 * 必须在事件阶段就掐断。</p>
+	 * 用 LOWEST 优先级是为了在任何处理之前就能取消：副手崩溃靠的是刷爆装备广播包,
+	 * 必须在事件阶段就掐断。
 	 */
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onSwapHandItems(PlayerSwapHandItemsEvent event) {
@@ -610,8 +610,8 @@ public final class MeteorfuckCheck implements Listener {
 	/**
 	 * 背包点击分发（反副手崩溃检测用）。
 	 *
-	 * <p>槽位越界、UNKNOWN 点击、非法热键按钮这些「原版客户端不可能发出的包」
-	 * 会被判定并直接取消。</p>
+	 * 槽位越界、UNKNOWN 点击、非法热键按钮这些「原版客户端不可能发出的包」
+	 * 会被判定并直接取消。
 	 */
 	@EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
 	public void onInventoryClick(InventoryClickEvent event) {

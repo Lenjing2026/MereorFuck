@@ -2,12 +2,29 @@ plugins {
 	id "java"
 }
 
-base.archivesName = "plugin"
+// ==================== 构建产物命名 ====================
+// 版本号取自 src/main/resources/paper-plugin.yml 的 version 字段（唯一来源，改那里即可）
+def pluginVersion = {
+	def yml = layout.projectDirectory.file('src/main/resources/paper-plugin.yml').asFile
+	if (!yml.exists()) {
+		return '0.0.0'
+	}
+	def matcher = yml.getText('UTF-8') =~ /(?m)^version:\s*(\S+)/
+	return matcher.find() ? matcher.group(1) : '0.0.0'
+}()
 
-def toolsDir = layout.projectDirectory.dir("build/tools")
-def runDir = layout.projectDirectory.dir("run")
-def pluginsDir = runDir.dir("plugins")
-def paperJar = runDir.file("paper.jar")
+// 构建次数持久化在项目根目录的 build-number.txt，每次产出 jar 自增 1
+def buildNumberFile = layout.projectDirectory.file('build-number.txt').asFile
+def storedBuildNumber = 0
+if (buildNumberFile.exists()) {
+	def text = buildNumberFile.getText('UTF-8').trim()
+	if (text.isInteger()) {
+		storedBuildNumber = text as int
+	}
+}
+def buildNumber = storedBuildNumber + 1
+
+base.archivesName = "MeteorFuck_v${pluginVersion}-build.${buildNumber}"
 
 repositories {
 	mavenCentral()
@@ -28,68 +45,29 @@ java {
 	sourceCompatibility = javaVersion
 	targetCompatibility = javaVersion
 	toolchain.languageVersion = JavaLanguageVersion.of(javaVersion.toString())
+	withSourcesJar()
 }
 
 tasks.withType(JavaCompile).configureEach {
 	options.release = javaVersion.toString() as Integer
 }
 
-tasks.register('prepareDirs') {
-	group 'paper'
+/**
+ * 每产出一次 jar，就把本次构建次数写回 build-number.txt。
+ * 不放在 configuration 阶段写，否则跑 gradlew tasks 这种命令也会把次数吃掉。
+ */
+tasks.register('bumpBuildNumber') {
+	group 'build'
+	description '递增构建次数（写入 build-number.txt）'
+
 	doLast {
-		toolsDir.asFile.mkdirs()
-		pluginsDir.asFile.mkdirs()
+		buildNumberFile.setText(buildNumber.toString(), 'UTF-8')
 	}
 }
 
-tasks.register('downloadPaper') {
-	group 'paper'
-	dependsOn 'prepareDirs'
-
-	doLast {
-		if (!paperJar.asFile.exists()) {
-			// The very long string of random characters need to be changed for each version/build. This is the download link on https://papermc.io/downloads/paper
-			new URL("https://fill-data.papermc.io/v1/objects/1d70b1dab9cf4a6de615209a536f3a45a2186240253c428213ce2188ab95e5f7/paper-26.1.2-74.jar").withInputStream { i ->
-				paperJar.asFile.withOutputStream { it << i }
-			}
-		}
-	}
-}
-
-tasks.register('buildPaper', Exec) {
-	group 'paper'
-	dependsOn tasks.downloadPaper
-
-	workingDir = runDir.asFile
-	commandLine = ["java", "-jar", paperJar.asFile.absolutePath, "--rev", "26.1.2"]
-	onlyIf { !paperJar.asFile.exists() }
-}
-
-tasks.register('copyPlugin', Copy) {
-	group 'paper'
-	dependsOn tasks.named('jar')
-
-	from layout.buildDirectory.file("libs/plugin.jar")
-	into layout.projectDirectory.dir("run/plugins")
-}
-
-tasks.register('runPaperServer', Exec) {
-	group 'paper'
-	dependsOn tasks.build
-	dependsOn tasks.copyPlugin
-
-	workingDir = file("run")
-	commandLine = ["java", "-jar", paperJar] as List<String>
-}
-
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
-}
-
-java {
-	withSourcesJar()
-	sourceCompatibility = javaVersion
-	targetCompatibility = javaVersion
+// jar / sourcesJar 都依赖它；同一任务只会执行一次，所以一次构建只 +1
+tasks.withType(Jar).configureEach {
+	dependsOn tasks.bumpBuildNumber
 }
 
 processResources {
@@ -101,4 +79,4 @@ processResources {
 	}
 }
 
-apply from: 'mcreator.gradle'
+apply from: 'e.gradle'

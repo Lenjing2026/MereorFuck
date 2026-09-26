@@ -11,7 +11,6 @@ import java.util.logging.Level;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -64,7 +63,7 @@ public class MeteorfuckMod extends JavaPlugin implements CommandExecutor, TabCom
 		instance = this;
 		reloadMainConfig();
 		reloadToolConfig();
-		registerCommand();
+		// 指令由 MeteorfuckModBootstrap 在 Commands 生命周期里注册，这里不用再注册
 		// 注册事件监听并启动检测模块的定时任务
 		MeteorfuckCheck.start(this);
 	}
@@ -213,16 +212,6 @@ public class MeteorfuckMod extends JavaPlugin implements CommandExecutor, TabCom
 
 	/* ============================ 指令 ============================ */
 
-	private void registerCommand() {
-		PluginCommand command = getCommand(COMMAND_NAME);
-		if (command == null) {
-			getLogger().log(Level.WARNING, "{0} 未在 paper-plugin.yml 中声明，指令不可用", COMMAND_NAME);
-			return;
-		}
-		command.setExecutor(this);
-		command.setTabCompleter(this);
-	}
-
 	@Override
 	public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 		if (!sender.hasPermission(ADMIN_PERMISSION)) {
@@ -231,13 +220,7 @@ public class MeteorfuckMod extends JavaPlugin implements CommandExecutor, TabCom
 		}
 		// 目前只有 tool 一个子指令
 		if (args.length < 3 || !"tool".equalsIgnoreCase(args[0])) {
-			send(sender, USAGE);
-			return true;
-		}
-		String tool = MeteorfuckCheck.matchTool(args[1]);
-		if (tool == null) {
-			send(sender, "&c未知功能：&f" + args[1] + "&c，可用功能：&f"
-					+ String.join("&7, &f", MeteorfuckCheck.TOOL_NAMES));
+			sendUsage(sender);
 			return true;
 		}
 		Boolean enabled = parseBoolean(args[2]);
@@ -245,9 +228,35 @@ public class MeteorfuckMod extends JavaPlugin implements CommandExecutor, TabCom
 			send(sender, "&c第三个参数只能是 &ftrue &c或 &ffalse");
 			return true;
 		}
-		setToolEnabled(tool, enabled);
-		send(sender, "&a已将 &f" + tool + " &a设置为 &f" + enabled);
+		applyToolToggle(sender, args[1], enabled);
 		return true;
+	}
+
+	/**
+	 * 回显指令用法（Brigadier 注册的指令也复用这里）。
+	 *
+	 * @param sender 指令发送者
+	 */
+	public void sendUsage(CommandSender sender) {
+		send(sender, USAGE);
+	}
+
+	/**
+	 * 设置某个功能的开关并回显结果，指令与 Brigadier 注册共用。
+	 *
+	 * @param sender  指令发送者
+	 * @param tool    功能名（忽略大小写）
+	 * @param enabled 是否启用
+	 */
+	public void applyToolToggle(CommandSender sender, String tool, boolean enabled) {
+		String matched = MeteorfuckCheck.matchTool(tool);
+		if (matched == null) {
+			send(sender, "&c未知功能：&f" + tool + "&c，可用功能：&f"
+					+ String.join("&7, &f", MeteorfuckCheck.TOOL_NAMES));
+			return;
+		}
+		setToolEnabled(matched, enabled);
+		send(sender, "&a已将 &f" + matched + " &a设置为 &f" + enabled);
 	}
 
 	@Override

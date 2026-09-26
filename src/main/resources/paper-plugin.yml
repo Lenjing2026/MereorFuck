@@ -1,13 +1,10 @@
 main: com.lj.meteorfuck.MeteorfuckMod
 name: MeteorFuck
 version: 1.0.0
-authors: Lenjing_2026
+authors: Lenjing_2026,MCreator
 bootstrapper: com.lj.meteorfuck.MeteorfuckModBootstrap
-website: https://mcreator.net
+website: https://github.com/Lenjing2026/MeteorFuck
 api-version: 26.1
 
-commands:
-  meteorfuck:
-    description: MeteorFuck 反作弊管理
-    usage: /meteorfuck tool <功能名> <true|false>
-    aliases: [ mf ]
+# 注意：paper-plugin.yml 不支持 commands 段，写在这里不会注册。
+# /meteorfuck 由 MeteorfuckModBootstrap 通过 LifecycleEvents.COMMANDS 注册（见 MeteorfuckCommand）。

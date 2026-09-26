@@ -22,28 +22,26 @@ import com.lj.meteorfuck.MeteorfuckMod;
 /**
  * 反飞行（Fly / Glide / Hover）检测器 —— 纯服务端实现。
  *
- * <p>本类<b>只提供函数</b>，不注册任何事件监听。后续由调度器调用
- * {@link #onMove(Player, Location, Location, boolean)}、{@link #tick()} 等入口即可。</p>
+ * 本类只提供函数，不注册任何事件监听。后续由调度器调用
+ * {@link #onMove(Player, Location, Location, boolean)}、{@link #tick()} 等入口即可。
  *
- * <h3>检测项</h3>
- * <ol>
- *   <li><b>垂直速度超限</b> —— 单 tick 上升速度超过原版跳跃（含跳跃提升）允许的上限；</li>
- *   <li><b>无重力悬停</b> —— 连续离地 1.5 秒以上、Y 坐标几乎不变，且脚下确实没有任何碰撞方块；</li>
- *   <li><b>重力异常</b> —— 下落过程中每 tick 的实际位移远小于物理预测值（缓降 / 滑翔）。</li>
- * </ol>
+ * 检测项
  *
- * <h3>如何区分「插件给的飞行权限」（重点）</h3>
- * <ul>
- *   <li>{@link Player#getAllowFlight()} 或 {@link Player#isFlying()} 为 true 时<b>完全放行</b>，
- *       因此 Essentials / CMI 等插件的 {@code /fly}、OP 手动开飞行、WorldGuard 的区域飞行都不会被误判；</li>
- *   <li>创造 / 旁观模式、{@code meteorfuck.bypass} 权限（OP 默认拥有）同样完全免检；</li>
- *   <li>鞘翅滑翔、游泳、水中、气泡柱、攀爬、三叉戟激流、
- *       漂浮（Levitation）与缓降（Slow Falling）药水效果一律跳过；</li>
- *   <li>骑乘中的玩家不检测；蜘蛛网 / 蜂蜜块 / 细雪旁的下落会被识别为「合法减速」；</li>
- *   <li>加入、重生、传送后给予免检期；服务器 TPS 过低时暂停检测；</li>
- *   <li>高延迟玩家的重力判定会因位置插值失真，因此延迟过高时直接跳过该检测；</li>
- *   <li>多信号<b>加权累计</b>（VL）后才踢出，单一信号绝不会误杀。</li>
- * </ul>
+ * 1. 垂直速度超限 —— 单 tick 上升速度超过原版跳跃（含跳跃提升）允许的上限；
+ * 2. 无重力悬停 —— 连续离地 1.5 秒以上、Y 坐标几乎不变，且脚下确实没有任何碰撞方块；
+ * 3. 重力异常 —— 下落过程中每 tick 的实际位移远小于物理预测值（缓降 / 滑翔）。
+ *
+ * 如何区分「插件给的飞行权限」（重点）
+ *
+ * - {@link Player#getAllowFlight()} 或 {@link Player#isFlying()} 为 true 时完全放行，
+ *   因此 Essentials / CMI 等插件的 {@code /fly}、OP 手动开飞行、WorldGuard 的区域飞行都不会被误判；
+ * - 创造 / 旁观模式、{@code meteorfuck.bypass} 权限（OP 默认拥有）同样完全免检；
+ * - 鞘翅滑翔、游泳、水中、气泡柱、攀爬、三叉戟激流、
+ *   漂浮（Levitation）与缓降（Slow Falling）药水效果一律跳过；
+ * - 骑乘中的玩家不检测；蜘蛛网 / 蜂蜜块 / 细雪旁的下落会被识别为「合法减速」；
+ * - 加入、重生、传送后给予免检期；服务器 TPS 过低时暂停检测；
+ * - 高延迟玩家的重力判定会因位置插值失真，因此延迟过高时直接跳过该检测；
+ * - 多信号加权累计（VL）后才踢出，单一信号绝不会误杀。
  */
 public final class No_Fly {
 
@@ -329,8 +327,8 @@ public final class No_Fly {
 	/**
 	 * 判断玩家脚下（薄片范围内）是否存在实体碰撞方块。
 	 *
-	 * <p>使用收窄的薄片包围盒与方块的碰撞形状做相交测试，
-	 * 因此半砖 / 栅栏 / 楼梯都能正确识别，同时不会因为贴着墙而产生误判。</p>
+	 * 使用收窄的薄片包围盒与方块的碰撞形状做相交测试，
+	 * 因此半砖 / 栅栏 / 楼梯都能正确识别，同时不会因为贴着墙而产生误判。
 	 */
 	private static boolean hasCollisionBelow(Player player) {
 		BoundingBox box = player.getBoundingBox();
@@ -451,8 +449,8 @@ public final class No_Fly {
 	/**
 	 * 判断玩家是否完全免检。
 	 *
-	 * <p>这里是「区分插件给的飞行权限」的关键：只要 {@code allowFlight} 或 {@code isFlying}
-	 * 为 true（Essentials 等插件的 /fly、OP 开飞行、区域飞行），就一律放行。</p>
+	 * 这里是「区分插件给的飞行权限」的关键：只要 {@code allowFlight} 或 {@code isFlying}
+	 * 为 true（Essentials 等插件的 /fly、OP 开飞行、区域飞行），就一律放行。
 	 */
 	private static boolean isExempt(Player player) {
 		if (player.isDead() || player.isInsideVehicle()) {
@@ -472,7 +470,7 @@ public final class No_Fly {
 	/**
 	 * 判断当前 tick 是否属于合法物理状态，需要跳过检测。
 	 *
-	 * <p>注意：气泡柱在 1.21.5 之后已并入 {@code isInWater()}，无需单独判断。</p>
+	 * 注意：气泡柱在 1.21.5 之后已并入 {@code isInWater()}，无需单独判断。
 	 */
 	private static boolean isMovementExempt(Player player) {
 		return player.isGliding() || player.isSwimming() || player.isInWater() || player.isClimbing()
